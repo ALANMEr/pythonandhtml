@@ -1,16 +1,11 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
 from flask_marshmallow import Marshmallow
-from flask_sqlalchemy import SQLAlchemy
-from dataclasses import field
 from gzip import READ
 from unittest import result
 from flask import Flask, jsonify, request
 from conf import config
+
 from flask_marshmallow import Marshmallow
-
-
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -21,54 +16,46 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 
-from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     NameRes = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=True)
     password = db.Column(db.String(), nullable=True)
     informa = db.Column(db.String(20), nullable=True)
     direccion = db.Column(db.String(20), nullable=True)
     telefono = db.Column(db.String(20), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.now)
-    bookmarks = db.relationship('Bookmark', backref="user")
+    personas = db.relationship('Persona', backref="user")
 
-    def __repr__(self) -> str:
-        return 'User>>>{self.NameRes}'
+    def __init__(self, NameRes,email,password, informa, direccion, telefono):
+        self.NameRes = NameRes
+        self.email=email
+        self.password=password
+        self.informa = informa
+        self.direccion = direccion
+        self.telefono = telefono
 
 
-class Bookmark(db.Model):
+class Persona(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=True)
     password = db.Column(db.String(), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    def __repr__(self) -> str:
-        return 'User>>>{self.Name}'
+    def __init__(self, Name, email, password):
+        self.NameRes = Name
+        self.email = email
+        self.password = password
+
 
 
 class InfoUser(ma.Schema):
     class Meta:
-        fields = ('id', 'email', 'password', 'NameRes',
-                  'infoma', 'direccion', 'telefono')
+        fields = ('id', 'email', 'password', 'NameRes','infoma', 'direccion', 'telefono')
 
 
 infoUser = InfoUser()
@@ -78,11 +65,13 @@ infoUser = InfoUser(many=True)
 @app.route('/add', methods=['POST'])
 def add_rest():
     NameRes = request.json['NameRes']
-    infoma = request.json['infoma']
+    email=request.json['email']
+    password = request.json['password']
+    informa = request.json['informa']
     direccion = request.json['direccion']
     telefono = request.json['telefono']
 
-    articles = User(NameRes, infoma, direccion, telefono)
+    articles = User(NameRes,email,password, informa, direccion, telefono)
     db.session.add(articles)
     db.session.commit()
     return infoUser.jsonify(articles)
@@ -106,10 +95,14 @@ def update_article(id):
     article = User.query.get(id)
 
     NameRes = request.json['NameRes']
+    email = request.json['email']
+    password = request.json['password']
     infoma = request.json['infoma']
     direccion = request.json['direccion']
     telefono = request.json['telefono']
     article.NameRes = NameRes
+    article.email=email
+    article.password=password
     article.infoma = infoma
     article.direccion = direccion
     article.telefono = telefono
