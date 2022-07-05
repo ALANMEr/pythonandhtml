@@ -4,6 +4,7 @@ from flask import Flask, flash, redirect, render_template
 from gzip import READ
 from unittest import result
 from flask import Flask, jsonify, request,url_for,flash
+
 from sqlalchemy import join
 from conf import config
 from flask_marshmallow import Marshmallow
@@ -32,7 +33,7 @@ class Posts(db.Model):
     telefono = db.Column(db.String(20), nullable=False)
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    def __init__(self, NameRes,email,password, informa, direccion, telefono):
+    def __init__(self, NameRes,email,password, informa, direccion, telefono)->None:
         self.NameRes = NameRes 
         self.email=email
         self.password=password
@@ -48,7 +49,7 @@ class Users(db.Model):
     password = db.Column(db.String(), nullable=True)
     posts=db.relationship('Posts',backref='poster')
 
-    def __init__(self,Name,email,password):
+    def __init__(self,Name,email,password)->None:
         self.Name=Name
         self.email=email
         self.password=password
@@ -196,6 +197,31 @@ def usu():
              return render_template('/frondend/index.html')
 
 
+##Restaurante
+
+
+@app.route('/')
+def indexw():
+    return redirect(url_for('login'))
+
+
+@app.route('/res', methods=['GET', 'POST'])
+def restau():
+    if request.method == 'POST':
+        user = User(0, request.form['Name'], request.form['password'])
+
+        logged_user = ModelUser.login(db, user)
+        if logged_user == None:
+            if logged_user.password:
+                return redirect(url_for('/frondend/loginrestaurante'))
+            else:
+                flash("Password no valido")
+                return render_template('/frondend/loginrestaurante')
+        else:
+            flash("No se encontro")
+    else:
+        return render_template('/frondend/loginrestaurante')
+
 
 
 @app.route('/home')
@@ -203,7 +229,17 @@ def home():
     return render_template('')
 
 
+
+def status_401(error):
+    return redirect(url_for('login'))
+
+
+def status_404(error):
+    return "<h1>Página no encontrada</h1>", 404
+
+
+
 if __name__ == "__main__":
     app.config.from_object(config['develoment'])
     app.register_error_handler(404, pagina404)
-    app.run('/ frondend/index.html')
+    app.run()
