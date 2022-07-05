@@ -1,12 +1,15 @@
-from flask import Flask
+import imp
+from pydoc import render_doc
+from flask import Flask, flash, redirect, render_template
 from gzip import READ
 from unittest import result
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request,url_for,flash
 from sqlalchemy import join
 from conf import config
 from flask_marshmallow import Marshmallow
-from flask_sqlalchemy import SQLAlchemy
-
+from flask_sqlalchemy import Model, SQLAlchemy
+from models.ModelUser import ModelUser
+from models.entities import User
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -30,7 +33,7 @@ class Posts(db.Model):
     poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def __init__(self, NameRes,email,password, informa, direccion, telefono):
-        self.NameRes = NameRes
+        self.NameRes = NameRes 
         self.email=email
         self.password=password
         self.informa = informa
@@ -157,7 +160,6 @@ def articles_delete(id):
 
     return Posts.jsonify(artitcle)
 
-
 @app.route('/', methods=['GET'])
 def lusta():
     try:
@@ -170,7 +172,38 @@ def pagina404(error):
     return "<h1>Página no encontrada<h1/>"
 
 
+#Metodos
+ 
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
+@app.route('/usu', methods=['GET','POST'])
+def usu():
+    if request.method=='POST':
+        user=User(0,request.form['Name'],request.form['password'])
+       
+        logged_user=ModelUser.login(db,user)
+        if logged_user == None:
+            if logged_user.password:
+                return redirect(url_for('/frondend/client.html'))
+            else:
+                     flash("Password no valido")
+                     return render_template('/frondend/index.html')
+        else:
+             flash("No se encontro")
+    else:
+             return render_template('/frondend/index.html')
+
+
+
+
+@app.route('/home')
+def home():
+    return render_template('')
+
+
 if __name__ == "__main__":
     app.config.from_object(config['develoment'])
     app.register_error_handler(404, pagina404)
-    app.run()
+    app.run('/ frondend/index.html')

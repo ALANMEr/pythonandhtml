@@ -57,7 +57,10 @@
     
             <div class="cd-signin-modal__block js-signin-modal-block" data-type="logi">
                 <!-- log in form -->
-                <form class="cd-signin-modal__form">
+                <form class="cd-signin-modal__form" action="/frontend/client.html" method="POST">
+                   {% with messages =get_flashed_message()%}
+
+                   {% end with}
                     <p class="cd-signin-modal__fieldset">
                         <label
                             class="cd-signin-modal__label cd-signin-modal__label--email cd-signin-modal__label--image-replace"
@@ -83,7 +86,7 @@
     
                     <p class="cd-signin-modal__fieldset">
                         <input class="cd-signin-modal__input cd-signin-modal__input--full-width" type="submit"
-                            value="Logi">
+                            value="Login">
                     </p>
                 </form>
     
