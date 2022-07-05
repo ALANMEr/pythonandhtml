@@ -1,10 +1,9 @@
 from flask import Flask
-from flask_marshmallow import Marshmallow
 from gzip import READ
 from unittest import result
 from flask import Flask, jsonify, request
+from sqlalchemy import join
 from conf import config
-
 from flask_marshmallow import Marshmallow
 from flask_sqlalchemy import SQLAlchemy
 
@@ -20,7 +19,7 @@ ma = Marshmallow(app)
 
 
 
-class User(db.Model):
+class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     NameRes = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=True)
@@ -28,7 +27,7 @@ class User(db.Model):
     informa = db.Column(db.String(20), nullable=True)
     direccion = db.Column(db.String(20), nullable=True)
     telefono = db.Column(db.String(20), nullable=False)
-    personas = db.relationship('Persona', backref="user")
+    poster_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def __init__(self, NameRes,email,password, informa, direccion, telefono):
         self.NameRes = NameRes
@@ -39,20 +38,19 @@ class User(db.Model):
         self.telefono = telefono
 
 
-class Persona(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Users(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     Name = db.Column(db.String(80), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=True)
     password = db.Column(db.String(), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    posts=db.relationship('Posts',backref='poster')
 
-    def __init__(self, Name, email, password):
-        self.NameRes = Name
-        self.email = email
-        self.password = password
+    def __init__(self,Name,email,password):
+        self.Name=Name
+        self.email=email
+        self.password=password
 
-
-
+#Restaurante registro
 class InfoUser(ma.Schema):
     class Meta:
         fields = ('id', 'email', 'password', 'NameRes','infoma', 'direccion', 'telefono')
@@ -62,6 +60,17 @@ infoUser = InfoUser()
 infoUser = InfoUser(many=True)
 
 
+#USARIO REGISTRO
+class InfoUsuario(ma.Schema):
+    class Meta:
+        fields = ('id', 'Name', 'email', 'password')
+
+infoRestaurante = InfoUsuario()
+infoRestaurante = InfoUsuario(many=True)
+
+
+
+#Registro restaurante
 @app.route('/add', methods=['POST'])
 def add_rest():
     NameRes = request.json['NameRes']
@@ -71,39 +80,66 @@ def add_rest():
     direccion = request.json['direccion']
     telefono = request.json['telefono']
 
-    articles = User(NameRes,email,password, informa, direccion, telefono)
+    articles = Posts(NameRes, email, password, informa, direccion, telefono)
     db.session.add(articles)
     db.session.commit()
     return infoUser.jsonify(articles)
 
+#Registro Usuario
 
-@app.route('/get', methods=['GET'])
-def get_articles():
-    all_articles = User.query.all()
+
+@app.route('/login', methods=['POST'])
+def add_login():
+ 
+    Name = request.json['Name']
+    email = request.json['email']
+    password = request.json['password']
+ 
+  
+    articles1 = Users(Name, email, password)
+    db.session.add(articles1)
+    db.session.commit()
+    return infoUser.jsonify(articles1)
+    
+    
+  #Buscar todos los usuarios  
+@app.route('/log', methods=['GET'])
+def get_articles1():
+    all_articles = Users.query.all()
     results = infoUser.dump(all_articles)
     return jsonify(results)
 
 
+#Muestra todos los restaurantes
+@app.route('/get', methods=['GET'])
+def get_articles():
+    all_articles = Posts.query.all()
+    results = infoUser.dump(all_articles)
+    return jsonify(results)
+
+#Muestra solo un restaurante por el id
 @app.route('/get/<id>/', methods=['GET'])
 def post_detalles(id):
-    article = User.query.get(id)
+    article = Posts.query.get(id)
     return infoUser.jsonify(article)
 
 
+#Muestra solo un usuario
+@app.route('/log/<id>/', methods=['GET'])
+def post_detalless(id):
+    article = Users.query.get(id)
+    return infoUser.jsonify(article)
+#Edita los restaurantes
 @app.route('/update/<id>/', methods=['PUT'])
 def update_article(id):
-    article = User.query.get(id)
+    article = Posts.query.get(id)
 
     NameRes = request.json['NameRes']
-    email = request.json['email']
-    password = request.json['password']
-    infoma = request.json['infoma']
+    informa = request.json['informa']
     direccion = request.json['direccion']
     telefono = request.json['telefono']
-    article.NameRes = NameRes
-    article.email=email
-    article.password=password
-    article.infoma = infoma
+    article.NameRes =NameRes
+    article.infoma = informa
     article.direccion = direccion
     article.telefono = telefono
 
@@ -111,24 +147,21 @@ def update_article(id):
     return infoUser.jsonify(article)
 
 
+
+#Borra los restaurantes
 @app.route('/delete/<id>/', methods=['DELETE'])
 def articles_delete(id):
-    artitcle = User.query.get(id)
+    artitcle = Posts.query.get(id)
     db.session.delete(artitcle)
     db.session.commit()
 
-    return User.jsonify(artitcle)
-
-
-
-
-
+    return Posts.jsonify(artitcle)
 
 
 @app.route('/', methods=['GET'])
 def lusta():
     try:
-        return "ok"
+        return "Inicio"
     except Exception as ex:
         return "error"
 
